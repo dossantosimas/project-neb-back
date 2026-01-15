@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entity/user.entity';
+import { User, UserRole } from '../entity/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 
@@ -24,26 +28,84 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { email } });
-    if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
-    }
-    return user;
-  }
-
-  async getUserByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+  async getUserByUsername(username: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { username } });
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.usersRepository.create(createUserDto);
+    // Verificar si el username ya existe
+    const existingUser = await this.usersRepository.findOne({
+      where: { username: createUserDto.username },
+    });
+    if (existingUser) {
+      throw new ConflictException(
+        `El username ${createUserDto.username} ya está en uso`,
+      );
+    }
+
+    // Si se intenta crear un usuario master, verificar que no exista otro
+    if (createUserDto.role === UserRole.MASTER) {
+      const existingMaster = await this.usersRepository.findOne({
+        where: { role: UserRole.MASTER },
+      });
+      if (existingMaster) {
+        throw new ConflictException(
+          'Ya existe un usuario con rol master. Solo puede haber un usuario master en la base de datos.',
+        );
+      }
+    }
+
+    const user = this.usersRepository.create({
+      username: createUserDto.username,
+      password: createUserDto.password,
+      role: createUserDto.role || UserRole.USER,
+      isActive: createUserDto.isActive ?? false,
+    });
     return this.usersRepository.save(user);
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
-    Object.assign(user, updateUserDto);
+
+    // Verificar si el username ya existe en otro usuario
+    if (updateUserDto.username && updateUserDto.username !== user.username) {
+      const existingUser = await this.usersRepository.findOne({
+        where: { username: updateUserDto.username },
+      });
+      if (existingUser && existingUser.id !== id) {
+        throw new ConflictException(
+          `El username ${updateUserDto.username} ya está en uso`,
+        );
+      }
+      user.username = updateUserDto.username;
+    }
+
+    // Actualizar password si se proporciona
+    if (updateUserDto.password) {
+      user.password = updateUserDto.password;
+    }
+
+    // Actualizar rol si se proporciona
+    if (updateUserDto.role !== undefined) {
+      // Si se intenta asignar rol master, verificar que no exista otro
+      if (updateUserDto.role === UserRole.MASTER && user.role !== UserRole.MASTER) {
+        const existingMaster = await this.usersRepository.findOne({
+          where: { role: UserRole.MASTER },
+        });
+        if (existingMaster && existingMaster.id !== id) {
+          throw new ConflictException(
+            'Ya existe un usuario con rol master. Solo puede haber un usuario master en la base de datos.',
+          );
+        }
+      }
+      user.role = updateUserDto.role;
+    }
+
+    // Actualizar isActive si se proporciona
+    if (updateUserDto.isActive !== undefined) {
+      user.isActive = updateUserDto.isActive;
+    }
+
     return this.usersRepository.save(user);
   }
 

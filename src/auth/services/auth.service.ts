@@ -13,16 +13,23 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.getUserByEmail(email);
+  async validateUser(userName: string, pass: string): Promise<any> {
+    const user = await this.usersService.getUserByUsername(userName);
     if (!user) {
-      throw new UnauthorizedException('Unauthorized');
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    // Verificar si el usuario está activo
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is inactive');
+    }
+
     const isMatch = await bcrypt.compare(pass, user.password);
-    if (isMatch) {
-      return user;
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid credentials');
     }
-    return null;
+
+    return user;
   }
 
   generateToken(user: User) {

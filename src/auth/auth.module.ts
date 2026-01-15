@@ -19,7 +19,7 @@ import { Env } from 'src/env.model';
       inject: [ConfigService],
       useFactory: (configService: ConfigService<Env>) => ({
         secret: configService.get('JWT_SECRET'),
-        signOptions: { expiresIn: '6d' },
+        signOptions: { expiresIn: '3h' },
       }),
     }),
     // JwtModule.register({

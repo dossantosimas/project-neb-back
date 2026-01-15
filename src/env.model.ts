@@ -7,4 +7,5 @@ export interface Env {
   DATABASE_URL: string;
   sslmode: string;
   JWT_SECRET: string;
+  CORS_ORIGIN?: string;
 }

@@ -3,15 +3,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Env } from './env.model';
 import { UsersModule } from './users/users.module';
-// import { AuthModule } from './auth/auth.module';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
+import { PlayersModule } from './players/players.module';
+import { CoachesModule } from './coaches/coaches.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    // ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService<Env>) => {
         const databaseUrl = configService.get('DATABASE_URL', { infer: true });
@@ -32,7 +34,10 @@ import { AuthModule } from './auth/auth.module';
     }),
     UsersModule,
     AuthModule,
-    // AuthModule,
+    CategoriesModule,
+    PlayersModule,
+    CoachesModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}
