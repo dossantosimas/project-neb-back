@@ -24,15 +24,25 @@ import { CreatePlayerDto } from '../dto/create-player.dto';
 import { UpdatePlayerDto } from '../dto/update-player.dto';
 
 @ApiTags('players')
-@ApiBearerAuth('JWT-auth')
 @Controller('players')
 export class PlayersController {
   constructor(private readonly playersService: PlayersService) {}
 
-  @ApiOperation({ summary: 'Crear un nuevo jugador (crea usuario y perfil)' })
+  @ApiOperation({ summary: 'Crear un nuevo jugador sin autenticación (registro público)' })
   @ApiResponse({ status: 201, description: 'Jugador creado exitosamente' })
   @ApiResponse({ status: 404, description: 'Categoría o Coach no encontrado' })
   @ApiResponse({ status: 409, description: 'Username ya está en uso' })
+  @Post('public')
+  @HttpCode(HttpStatus.CREATED)
+  createPublic(@Body() createPlayerDto: CreatePlayerDto) {
+    return this.playersService.create(createPlayerDto);
+  }
+
+  @ApiOperation({ summary: 'Crear un nuevo jugador (crea usuario y perfil) - Requiere autenticación' })
+  @ApiResponse({ status: 201, description: 'Jugador creado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Categoría o Coach no encontrado' })
+  @ApiResponse({ status: 409, description: 'Username ya está en uso' })
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('jwt'))
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -42,6 +52,7 @@ export class PlayersController {
 
   @ApiOperation({ summary: 'Obtener todos los jugadores' })
   @ApiResponse({ status: 200, description: 'Lista de jugadores' })
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('jwt'))
   @Get()
   findAll() {
@@ -52,6 +63,7 @@ export class PlayersController {
   @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Jugador encontrado' })
   @ApiResponse({ status: 404, description: 'Jugador no encontrado' })
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
@@ -62,6 +74,7 @@ export class PlayersController {
   @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Jugador actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Jugador no encontrado' })
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(
@@ -75,6 +88,7 @@ export class PlayersController {
   @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 204, description: 'Jugador eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Jugador no encontrado' })
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
