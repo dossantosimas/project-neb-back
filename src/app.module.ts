@@ -8,6 +8,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { PlayersModule } from './players/players.module';
 import { CoachesModule } from './coaches/coaches.module';
 import { PaymentsModule } from './payments/payments.module';
+import { TournamentsModule } from './tournaments/tournaments.module';
+import { MatchesModule } from './matches/matches.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { PaymentsModule } from './payments/payments.module';
     PlayersModule,
     CoachesModule,
     PaymentsModule,
+    TournamentsModule,
+    MatchesModule,
+    StatisticsModule,
   ],
 })
 export class AppModule {}

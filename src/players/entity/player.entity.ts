@@ -13,6 +13,7 @@ import { User } from '../../users/entity/user.entity';
 import { Category } from '../../categories/entity/category.entity';
 import { Coach } from '../../coaches/entity/coach.entity';
 import { Payment } from '../../payments/entity/payment.entity';
+import { Statistics } from '../../statistics/entity/statistics.entity';
 
 @Entity('players')
 export class Player {
@@ -79,4 +80,8 @@ export class Player {
   // Relación 1:N con Payment
   @OneToMany(() => Payment, (payment) => payment.player)
   payments: Payment[];
+
+  // Relación 1:N con Statistics
+  @OneToMany(() => Statistics, (statistics) => statistics.player)
+  statistics: Statistics[];
 }

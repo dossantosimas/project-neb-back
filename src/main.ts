@@ -51,6 +51,9 @@ async function bootstrap() {
     .addTag('coaches', 'Gestión de entrenadores')
     .addTag('categories', 'Gestión de categorías')
     .addTag('payments', 'Gestión de pagos')
+    .addTag('tournaments', 'Gestión de torneos')
+    .addTag('matches', 'Gestión de partidos')
+    .addTag('statistics', 'Gestión de estadísticas')
     .addBearerAuth(
       {
         type: 'http',
