@@ -46,6 +46,11 @@ export class UpdatePlayerDto {
   @IsDateString()
   birthDate?: string;
 
+  @ApiProperty({ description: 'Nombre del familiar', required: false })
+  @IsOptional()
+  @IsString()
+  familyName?: string;
+
   @ApiProperty({ description: 'Contacto familiar', required: false })
   @IsOptional()
   @IsString()

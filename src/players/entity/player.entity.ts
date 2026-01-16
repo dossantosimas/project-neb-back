@@ -47,6 +47,9 @@ export class Player {
   @Column({ name: 'birth_date', type: 'date', nullable: true })
   birthDate: Date | null;
 
+  @Column({ name: 'family_name', type: 'varchar', nullable: true })
+  familyName: string | null;
+
   @Column({ name: 'family_contact', type: 'varchar', nullable: true })
   familyContact: string | null;
 

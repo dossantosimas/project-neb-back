@@ -79,8 +79,17 @@ export class CreatePlayerDto {
   birthDate?: string;
 
   @ApiProperty({
+    description: 'Nombre del familiar',
+    example: 'María González',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  familyName?: string;
+
+  @ApiProperty({
     description: 'Contacto familiar (email o teléfono)',
-    example: 'madre@example.com',
+    example: 'maria.gonzalez@example.com',
     required: false,
   })
   @IsOptional()

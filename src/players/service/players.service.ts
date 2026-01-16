@@ -108,6 +108,7 @@ export class PlayersService {
       player.birthDate = createPlayerDto.birthDate
         ? new Date(createPlayerDto.birthDate)
         : null;
+      player.familyName = createPlayerDto.familyName || null;
       player.familyContact = createPlayerDto.familyContact || null;
       player.relationship = createPlayerDto.relationship || null;
       player.isActive = createPlayerDto.isActive ?? false;
@@ -196,6 +197,9 @@ export class PlayersService {
       player.birthDate = updatePlayerDto.birthDate
         ? new Date(updatePlayerDto.birthDate)
         : null;
+    }
+    if (updatePlayerDto.familyName !== undefined) {
+      player.familyName = updatePlayerDto.familyName ?? null;
     }
     if (updatePlayerDto.familyContact !== undefined) {
       player.familyContact = updatePlayerDto.familyContact ?? null;
