@@ -9,7 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -49,36 +49,36 @@ export class MatchesController {
   }
 
   @ApiOperation({ summary: 'Obtener un partido por ID' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Partido encontrado' })
   @ApiResponse({ status: 404, description: 'Partido no encontrado' })
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.matchesService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Actualizar un partido' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Partido actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Partido no encontrado' })
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateMatchDto: UpdateMatchDto,
   ) {
     return this.matchesService.update(id, updateMatchDto);
   }
 
   @ApiOperation({ summary: 'Eliminar un partido' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 204, description: 'Partido eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Partido no encontrado' })
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.matchesService.remove(id);
   }
 }

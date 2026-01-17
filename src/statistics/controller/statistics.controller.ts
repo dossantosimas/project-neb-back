@@ -10,7 +10,6 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  ParseUUIDPipe,
   ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -52,55 +51,55 @@ export class StatisticsController {
   }
 
   @ApiOperation({ summary: 'Obtener estadísticas por jugador o partido' })
-  @ApiQuery({ name: 'playerId', type: 'number', required: false })
-  @ApiQuery({ name: 'matchId', type: 'string', format: 'uuid', required: false })
+  @ApiQuery({ name: 'playerProfileId', type: 'number', required: false })
+  @ApiQuery({ name: 'matchId', type: 'number', required: false })
   @ApiResponse({ status: 200, description: 'Lista de estadísticas' })
   @UseGuards(AuthGuard('jwt'))
   @Get('filter')
   findByFilter(
-    @Query('playerId') playerId?: string,
+    @Query('playerProfileId') playerProfileId?: string,
     @Query('matchId') matchId?: string,
   ) {
-    if (playerId) {
-      return this.statisticsService.findByPlayer(parseInt(playerId, 10));
+    if (playerProfileId) {
+      return this.statisticsService.findByPlayer(parseInt(playerProfileId, 10));
     }
     if (matchId) {
-      return this.statisticsService.findByMatch(matchId);
+      return this.statisticsService.findByMatch(parseInt(matchId, 10));
     }
     return this.statisticsService.findAll();
   }
 
   @ApiOperation({ summary: 'Obtener estadísticas por ID' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Estadísticas encontradas' })
   @ApiResponse({ status: 404, description: 'Estadísticas no encontradas' })
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.statisticsService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Actualizar estadísticas' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Estadísticas actualizadas exitosamente' })
   @ApiResponse({ status: 404, description: 'Estadísticas no encontradas' })
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateStatisticsDto: UpdateStatisticsDto,
   ) {
     return this.statisticsService.update(id, updateStatisticsDto);
   }
 
   @ApiOperation({ summary: 'Eliminar estadísticas' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 204, description: 'Estadísticas eliminadas exitosamente' })
   @ApiResponse({ status: 404, description: 'Estadísticas no encontradas' })
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.statisticsService.remove(id);
   }
 }

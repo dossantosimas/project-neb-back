@@ -16,12 +16,81 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+  async findAll(
+    page?: number,
+    limit?: number,
+    search?: string,
+  ): Promise<
+    | {
+        data: User[];
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
+      }
+    | User[]
+  > {
+    const queryBuilder = this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.profiles', 'profile')
+      .leftJoinAndSelect('profile.category', 'category')
+      .leftJoinAndSelect('profile.coachProfile', 'coachProfile')
+      .leftJoinAndSelect('profile.playerProfile', 'playerProfile')
+      .leftJoinAndSelect('profile.coachProfileDetail', 'coachProfileDetail')
+      .leftJoinAndSelect('coachProfileDetail.categories', 'coachCategories')
+      .orderBy('user.id', 'ASC');
+
+    // Si hay búsqueda, filtrar por nombre o documento
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      queryBuilder.where(
+        '(playerProfile.firstName ILIKE :search OR playerProfile.lastName ILIKE :search OR playerProfile.document ILIKE :search OR CONCAT(playerProfile.firstName, \' \', playerProfile.lastName) ILIKE :search)',
+        { search: searchTerm },
+      );
+    }
+
+    // Si no se proporciona paginación, devolver todos los usuarios
+    if (page === undefined && limit === undefined) {
+      const data = await queryBuilder.getMany();
+      return data;
+    }
+
+    // Aplicar paginación
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    queryBuilder.skip(skip).take(limitNum);
+
+    // Obtener datos y total
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    const totalPages = Math.ceil(total / limitNum);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+      },
+    };
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: [
+        'profiles',
+        'profiles.category',
+        'profiles.coachProfile',
+        'profiles.coachProfile.categories',
+        'profiles.playerProfile',
+      ],
+    });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -41,18 +110,6 @@ export class UsersService {
       throw new ConflictException(
         `El username ${createUserDto.username} ya está en uso`,
       );
-    }
-
-    // Si se intenta crear un usuario master, verificar que no exista otro
-    if (createUserDto.role === UserRole.MASTER) {
-      const existingMaster = await this.usersRepository.findOne({
-        where: { role: UserRole.MASTER },
-      });
-      if (existingMaster) {
-        throw new ConflictException(
-          'Ya existe un usuario con rol master. Solo puede haber un usuario master en la base de datos.',
-        );
-      }
     }
 
     const user = this.usersRepository.create({
@@ -87,17 +144,6 @@ export class UsersService {
 
     // Actualizar rol si se proporciona
     if (updateUserDto.role !== undefined) {
-      // Si se intenta asignar rol master, verificar que no exista otro
-      if (updateUserDto.role === UserRole.MASTER && user.role !== UserRole.MASTER) {
-        const existingMaster = await this.usersRepository.findOne({
-          where: { role: UserRole.MASTER },
-        });
-        if (existingMaster && existingMaster.id !== id) {
-          throw new ConflictException(
-            'Ya existe un usuario con rol master. Solo puede haber un usuario master en la base de datos.',
-          );
-        }
-      }
       user.role = updateUserDto.role;
     }
 

@@ -4,16 +4,18 @@ import {
   PrimaryGeneratedColumn,
   BeforeInsert,
   BeforeUpdate,
+  OneToMany,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 
+// Roles: 1: master, 2: admin, 3: coach, 4: player
 export enum UserRole {
-  MASTER = 'master',
-  ADMIN = 'admin',
-  COACH = 'coach',
-  PLAYER = 'player',
-  USER = 'user',
+  MASTER = 1,
+  ADMIN = 2,
+  COACH = 3,
+  PLAYER = 4,
+  USER = 5, // Rol por defecto para usuarios genéricos
 }
 
 @Entity('users')
@@ -29,13 +31,17 @@ export class User {
   password: string;
 
   @Column({
-    type: 'varchar',
+    type: 'int',
     default: UserRole.USER,
   })
-  role: string;
+  role: number; // 1: master, 2: admin, 3: coach, 4: player
 
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
+
+  // Relación 1:N con Profile
+  @OneToMany('Profile', 'user')
+  profiles: any[];
 
   @BeforeInsert()
   @BeforeUpdate()

@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Statistics } from '../entity/statistics.entity';
-import { Player } from '../../players/entity/player.entity';
+import { PlayerProfile } from '../../profiles/entity/player-profile.entity';
 import { Match } from '../../matches/entity/match.entity';
 import { CreateStatisticsDto } from '../dto/create-statistics.dto';
 import { UpdateStatisticsDto } from '../dto/update-statistics.dto';
@@ -16,8 +16,8 @@ export class StatisticsService {
   constructor(
     @InjectRepository(Statistics)
     private statisticsRepository: Repository<Statistics>,
-    @InjectRepository(Player)
-    private playersRepository: Repository<Player>,
+    @InjectRepository(PlayerProfile)
+    private playerProfilesRepository: Repository<PlayerProfile>,
     @InjectRepository(Match)
     private matchesRepository: Repository<Match>,
   ) {}
@@ -28,7 +28,7 @@ export class StatisticsService {
     });
   }
 
-  async findOne(id: string): Promise<Statistics> {
+  async findOne(id: number): Promise<Statistics> {
     const statistics = await this.statisticsRepository.findOne({
       where: { id },
       relations: ['player', 'match'],
@@ -39,15 +39,15 @@ export class StatisticsService {
     return statistics;
   }
 
-  async findByPlayer(playerId: number): Promise<Statistics[]> {
+  async findByPlayer(playerProfileId: number): Promise<Statistics[]> {
     return this.statisticsRepository.find({
-      where: { playerId },
+      where: { playerProfileId },
       relations: ['player', 'match'],
-      order: { createdAt: 'DESC' },
+      order: { id: 'DESC' },
     });
   }
 
-  async findByMatch(matchId: string): Promise<Statistics[]> {
+  async findByMatch(matchId: number): Promise<Statistics[]> {
     return this.statisticsRepository.find({
       where: { matchId },
       relations: ['player', 'match'],
@@ -56,12 +56,12 @@ export class StatisticsService {
 
   async create(createStatisticsDto: CreateStatisticsDto): Promise<Statistics> {
     // Verificar que el jugador exista
-    const player = await this.playersRepository.findOne({
-      where: { id: createStatisticsDto.playerId },
+    const playerProfile = await this.playerProfilesRepository.findOne({
+      where: { id: createStatisticsDto.playerProfileId },
     });
-    if (!player) {
+    if (!playerProfile) {
       throw new NotFoundException(
-        `Player with ID ${createStatisticsDto.playerId} not found`,
+        `PlayerProfile with ID ${createStatisticsDto.playerProfileId} not found`,
       );
     }
 
@@ -78,47 +78,45 @@ export class StatisticsService {
     // Verificar que no existan estadísticas duplicadas para el mismo jugador y partido
     const existingStats = await this.statisticsRepository.findOne({
       where: {
-        playerId: createStatisticsDto.playerId,
+        playerProfileId: createStatisticsDto.playerProfileId,
         matchId: createStatisticsDto.matchId,
       },
     });
     if (existingStats) {
       throw new BadRequestException(
-        `Statistics for player ${createStatisticsDto.playerId} in match ${createStatisticsDto.matchId} already exist`,
+        `Statistics for player ${createStatisticsDto.playerProfileId} in match ${createStatisticsDto.matchId} already exist`,
       );
     }
 
-    // Validar que los intentos sean mayores o iguales a los anotados
-    if (
-      createStatisticsDto.fgAttempted < createStatisticsDto.fgMade ||
-      createStatisticsDto.threeAttempted < createStatisticsDto.threeMade ||
-      createStatisticsDto.ftAttempted < createStatisticsDto.ftMade
-    ) {
-      throw new BadRequestException(
-        'Attempted shots must be greater than or equal to made shots',
-      );
-    }
-
-    const statistics = this.statisticsRepository.create(createStatisticsDto);
+    const statistics = this.statisticsRepository.create({
+      playerProfileId: createStatisticsDto.playerProfileId,
+      matchId: createStatisticsDto.matchId,
+      points: createStatisticsDto.points,
+      rebounds: createStatisticsDto.rebounds,
+      assists: createStatisticsDto.assists,
+      steals: createStatisticsDto.steals,
+      blocks: createStatisticsDto.blocks,
+    });
     return this.statisticsRepository.save(statistics);
   }
 
   async update(
-    id: string,
+    id: number,
     updateStatisticsDto: UpdateStatisticsDto,
   ): Promise<Statistics> {
     const statistics = await this.findOne(id);
 
     // Verificar que el jugador exista si se actualiza
-    if (updateStatisticsDto.playerId !== undefined) {
-      const player = await this.playersRepository.findOne({
-        where: { id: updateStatisticsDto.playerId },
+    if (updateStatisticsDto.playerProfileId !== undefined) {
+      const playerProfile = await this.playerProfilesRepository.findOne({
+        where: { id: updateStatisticsDto.playerProfileId },
       });
-      if (!player) {
+      if (!playerProfile) {
         throw new NotFoundException(
-          `Player with ID ${updateStatisticsDto.playerId} not found`,
+          `PlayerProfile with ID ${updateStatisticsDto.playerProfileId} not found`,
         );
       }
+      statistics.playerProfileId = updateStatisticsDto.playerProfileId;
     }
 
     // Verificar que el partido exista si se actualiza
@@ -131,34 +129,30 @@ export class StatisticsService {
           `Match with ID ${updateStatisticsDto.matchId} not found`,
         );
       }
+      statistics.matchId = updateStatisticsDto.matchId;
     }
 
-    // Validar que los intentos sean mayores o iguales a los anotados
-    const fgAttempted =
-      updateStatisticsDto.fgAttempted ?? statistics.fgAttempted;
-    const fgMade = updateStatisticsDto.fgMade ?? statistics.fgMade;
-    const threeAttempted =
-      updateStatisticsDto.threeAttempted ?? statistics.threeAttempted;
-    const threeMade = updateStatisticsDto.threeMade ?? statistics.threeMade;
-    const ftAttempted =
-      updateStatisticsDto.ftAttempted ?? statistics.ftAttempted;
-    const ftMade = updateStatisticsDto.ftMade ?? statistics.ftMade;
-
-    if (
-      fgAttempted < fgMade ||
-      threeAttempted < threeMade ||
-      ftAttempted < ftMade
-    ) {
-      throw new BadRequestException(
-        'Attempted shots must be greater than or equal to made shots',
-      );
+    // Actualizar campos básicos
+    if (updateStatisticsDto.points !== undefined) {
+      statistics.points = updateStatisticsDto.points;
+    }
+    if (updateStatisticsDto.rebounds !== undefined) {
+      statistics.rebounds = updateStatisticsDto.rebounds;
+    }
+    if (updateStatisticsDto.assists !== undefined) {
+      statistics.assists = updateStatisticsDto.assists;
+    }
+    if (updateStatisticsDto.steals !== undefined) {
+      statistics.steals = updateStatisticsDto.steals;
+    }
+    if (updateStatisticsDto.blocks !== undefined) {
+      statistics.blocks = updateStatisticsDto.blocks;
     }
 
-    Object.assign(statistics, updateStatisticsDto);
     return this.statisticsRepository.save(statistics);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     const statistics = await this.findOne(id);
     await this.statisticsRepository.remove(statistics);
   }

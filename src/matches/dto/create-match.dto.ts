@@ -3,86 +3,75 @@ import {
   IsNotEmpty,
   IsOptional,
   IsDateString,
-  IsBoolean,
-  IsUUID,
-  IsEnum,
+  IsNumber,
+  IsInt,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export enum MatchStatus {
-  SCHEDULED = 'scheduled',
-  FINISHED = 'finished',
-  CANCELED = 'canceled',
-}
-
 export class CreateMatchDto {
+  @ApiProperty({
+    description: 'ID del torneo (si aplica)',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  tournamentId?: number;
+
+  @ApiProperty({
+    description: 'Equipo oponente',
+    example: 'Lakers',
+  })
+  @IsNotEmpty()
+  @IsString()
+  opposingTeam: string;
+
+  @ApiProperty({
+    description: 'Puntos del equipo local',
+    example: 95,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  homeScore: number;
+
+  @ApiProperty({
+    description: 'Puntos del equipo visitante',
+    example: 88,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  awayScore: number;
+
+  @ApiProperty({
+    description: 'País donde se juega',
+    example: 'Argentina',
+  })
+  @IsNotEmpty()
+  @IsString()
+  country: string;
+
+  @ApiProperty({
+    description: 'Ciudad donde se juega',
+    example: 'Buenos Aires',
+  })
+  @IsNotEmpty()
+  @IsString()
+  city: string;
+
   @ApiProperty({
     description: 'Fecha del partido (formato: YYYY-MM-DD)',
     example: '2025-02-15',
   })
   @IsNotEmpty()
   @IsDateString()
-  matchDate: string;
+  date: string;
 
   @ApiProperty({
-    description: 'Hora del partido (formato: HH:mm)',
-    example: '18:00',
+    description: 'Descripción del partido',
+    example: 'Partido de la temporada regular',
     required: false,
   })
   @IsOptional()
   @IsString()
-  matchTime?: string;
-
-  @ApiProperty({
-    description: 'Indica si es un partido amistoso',
-    example: false,
-    default: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isFriendly?: boolean;
-
-  @ApiProperty({
-    description: 'ID del torneo (si aplica)',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    required: false,
-  })
-  @IsOptional()
-  @IsUUID()
-  tournamentId?: string;
-
-  @ApiProperty({
-    description: 'ID del equipo local',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsNotEmpty()
-  @IsUUID()
-  homeTeamId: string;
-
-  @ApiProperty({
-    description: 'ID del equipo visitante',
-    example: '123e4567-e89b-12d3-a456-426614174001',
-  })
-  @IsNotEmpty()
-  @IsUUID()
-  awayTeamId: string;
-
-  @ApiProperty({
-    description: 'Cancha / ciudad donde se juega',
-    example: 'Estadio Central',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  location?: string;
-
-  @ApiProperty({
-    description: 'Estado del partido',
-    enum: MatchStatus,
-    example: MatchStatus.SCHEDULED,
-    default: MatchStatus.SCHEDULED,
-  })
-  @IsOptional()
-  @IsEnum(MatchStatus)
-  status?: MatchStatus;
+  description?: string;
 }

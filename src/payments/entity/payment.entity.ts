@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Player } from '../../players/entity/player.entity';
+import { PlayerProfile } from '../../profiles/entity/player-profile.entity';
 
 export enum PaymentStatus {
   PENDING = 'pending',
@@ -27,8 +27,8 @@ export class Payment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'player_id' })
-  playerId: number;
+  @Column({ name: 'player_profile_id' })
+  playerProfileId: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;
@@ -63,8 +63,8 @@ export class Payment {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  // Relación N:1 con Player
-  @ManyToOne(() => Player, (player) => player.payments)
-  @JoinColumn({ name: 'player_id' })
-  player: Player;
+  // Relación N:1 con PlayerProfile
+  @ManyToOne(() => PlayerProfile, (playerProfile) => playerProfile.payments)
+  @JoinColumn({ name: 'player_profile_id' })
+  player: PlayerProfile;
 }

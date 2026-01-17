@@ -10,10 +10,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { PaymentStatus, PaymentMethod } from '../entity/payment.entity';
 
 export class UpdatePaymentDto {
-  @ApiProperty({ description: 'ID del jugador', required: false })
+  @ApiProperty({ description: 'ID del perfil del jugador', required: false })
   @IsOptional()
   @IsNumber()
-  playerId?: number;
+  playerProfileId?: number;
 
   @ApiProperty({ description: 'Valor del pago', required: false, minimum: 0 })
   @IsOptional()

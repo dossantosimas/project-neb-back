@@ -44,8 +44,8 @@ export class Coach {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  // Relación N:M con Category
-  @ManyToMany(() => Category, (category) => category.coaches)
+  // Relación N:M con Category (mantenida para compatibilidad temporal)
+  @ManyToMany(() => Category)
   categories: Category[];
 
   // Relación 1:N con Player

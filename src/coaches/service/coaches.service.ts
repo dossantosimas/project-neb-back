@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, In } from 'typeorm';
 import { Coach } from '../entity/coach.entity';
-import { User } from '../../users/entity/user.entity';
+import { User, UserRole } from '../../users/entity/user.entity';
 import { Category } from '../../categories/entity/category.entity';
 import { CreateCoachDto } from '../dto/create-coach.dto';
 import { UpdateCoachDto } from '../dto/update-coach.dto';
@@ -79,7 +79,7 @@ export class CoachesService {
       const user = queryRunner.manager.create(User, {
         username: createCoachDto.username,
         password: createCoachDto.password,
-        role: 'coach',
+        role: UserRole.COACH,
       });
       const savedUser = await queryRunner.manager.save(User, user);
 

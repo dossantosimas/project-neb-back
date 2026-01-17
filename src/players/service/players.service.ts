@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Player } from '../entity/player.entity';
-import { User } from '../../users/entity/user.entity';
+import { User, UserRole } from '../../users/entity/user.entity';
 import { Category } from '../../categories/entity/category.entity';
 import { Coach } from '../../coaches/entity/coach.entity';
 import { CreatePlayerDto } from '../dto/create-player.dto';
@@ -93,7 +93,7 @@ export class PlayersService {
       const user = new User();
       user.username = createPlayerDto.username;
       user.password = createPlayerDto.password;
-      user.role = 'player';
+      user.role = UserRole.PLAYER;
       const savedUser = await queryRunner.manager.save(User, user);
 
       // Crear perfil del jugador

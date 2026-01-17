@@ -3,12 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './controller/payments.controller';
 import { PaymentsService } from './service/payments.service';
 import { Payment } from './entity/payment.entity';
-import { Player } from '../players/entity/player.entity';
+import { PlayerProfile } from '../profiles/entity/player-profile.entity';
 import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, Player]),
+    TypeOrmModule.forFeature([Payment, PlayerProfile]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [PaymentsController],

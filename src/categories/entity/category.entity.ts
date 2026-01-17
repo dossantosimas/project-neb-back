@@ -4,12 +4,12 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToMany,
   OneToMany,
-  JoinTable,
+  ManyToMany,
 } from 'typeorm';
-import { Coach } from '../../coaches/entity/coach.entity';
-import { Player } from '../../players/entity/player.entity';
+import { Profile } from '../../profiles/entity/profile.entity';
+import { Tournament } from '../../tournaments/entity/tournament.entity';
+import { CoachProfile } from '../../profiles/entity/coach-profile.entity';
 
 @Entity('categories')
 export class Category {
@@ -19,22 +19,24 @@ export class Category {
   @Column()
   name: string;
 
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  // Relación N:M con Coach
-  @ManyToMany(() => Coach, (coach) => coach.categories)
-  @JoinTable({
-    name: 'coach_categories',
-    joinColumn: { name: 'category_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'coach_id', referencedColumnName: 'id' },
-  })
-  coaches: Coach[];
+  // Relación 1:N con Profile
+  @OneToMany(() => Profile, (profile) => profile.category)
+  profiles: Profile[];
 
-  // Relación 1:N con Player
-  @OneToMany(() => Player, (player) => player.category)
-  players: Player[];
+  // Relación 1:N con Tournament
+  @OneToMany(() => Tournament, (tournament) => tournament.category)
+  tournaments: Tournament[];
+
+  // Relación N:M con CoachProfile (muchas categorías pueden tener muchos entrenadores)
+  @ManyToMany(() => CoachProfile, (coachProfile) => coachProfile.categories)
+  coachProfiles: CoachProfile[];
 }

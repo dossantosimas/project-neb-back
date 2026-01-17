@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -18,6 +19,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from '../service/users.service';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -39,12 +41,77 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @ApiOperation({ summary: 'Obtener todos los usuarios' })
-  @ApiResponse({ status: 200, description: 'Lista de usuarios' })
+  @ApiOperation({
+    summary: 'Obtener todos los usuarios (con o sin paginación y filtros)',
+    description:
+      'Si no se proporcionan page y limit, devuelve todos los usuarios. Si se proporcionan, devuelve resultados paginados.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description:
+      'Número de página (opcional, si no se proporciona devuelve todos)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description:
+      'Cantidad de elementos por página (opcional, si no se proporciona devuelve todos)',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description:
+      'Buscar por nombre del perfil (firstName, lastName) o documento',
+    example: 'Juan',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuarios (paginada o completa)',
+    schema: {
+      oneOf: [
+        {
+          type: 'array',
+          items: { type: 'object' },
+          description: 'Array de usuarios cuando no hay paginación',
+        },
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: { type: 'object' },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                total: { type: 'number' },
+                page: { type: 'number' },
+                limit: { type: 'number' },
+                totalPages: { type: 'number' },
+              },
+            },
+          },
+          description: 'Objeto con data y meta cuando hay paginación',
+        },
+      ],
+    },
+  })
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.usersService.findAll(pageNum, limitNum, search);
   }
 
   @ApiOperation({ summary: 'Obtener un usuario por ID' })

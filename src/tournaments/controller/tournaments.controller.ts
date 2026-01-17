@@ -9,7 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -47,36 +47,36 @@ export class TournamentsController {
   }
 
   @ApiOperation({ summary: 'Obtener un torneo por ID' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Torneo encontrado' })
   @ApiResponse({ status: 404, description: 'Torneo no encontrado' })
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.tournamentsService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Actualizar un torneo' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Torneo actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Torneo no encontrado' })
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateTournamentDto: UpdateTournamentDto,
   ) {
     return this.tournamentsService.update(id, updateTournamentDto);
   }
 
   @ApiOperation({ summary: 'Eliminar un torneo' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 204, description: 'Torneo eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Torneo no encontrado' })
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.tournamentsService.remove(id);
   }
 }

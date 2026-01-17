@@ -25,7 +25,7 @@ export class MatchesService {
     });
   }
 
-  async findOne(id: string): Promise<Match> {
+  async findOne(id: number): Promise<Match> {
     const match = await this.matchesRepository.findOne({
       where: { id },
       relations: ['tournament', 'statistics'],
@@ -49,24 +49,21 @@ export class MatchesService {
       }
     }
 
-    // Verificar que los equipos sean diferentes
-    if (createMatchDto.homeTeamId === createMatchDto.awayTeamId) {
-      throw new BadRequestException(
-        'Home team and away team must be different',
-      );
-    }
-
     const match = this.matchesRepository.create({
-      ...createMatchDto,
-      matchDate: new Date(createMatchDto.matchDate),
-      isFriendly: createMatchDto.isFriendly ?? false,
-      status: createMatchDto.status ?? 'scheduled',
+      tournamentId: createMatchDto.tournamentId ?? null,
+      opposingTeam: createMatchDto.opposingTeam,
+      homeScore: createMatchDto.homeScore,
+      awayScore: createMatchDto.awayScore,
+      country: createMatchDto.country,
+      city: createMatchDto.city,
+      date: new Date(createMatchDto.date),
+      description: createMatchDto.description ?? null,
     });
 
     return this.matchesRepository.save(match);
   }
 
-  async update(id: string, updateMatchDto: UpdateMatchDto): Promise<Match> {
+  async update(id: number, updateMatchDto: UpdateMatchDto): Promise<Match> {
     const match = await this.findOne(id);
 
     // Verificar que el torneo exista si se proporciona
@@ -86,32 +83,15 @@ export class MatchesService {
       }
     }
 
-    // Verificar que los equipos sean diferentes si se actualizan
-    if (
-      updateMatchDto.homeTeamId !== undefined ||
-      updateMatchDto.awayTeamId !== undefined
-    ) {
-      const homeTeamId =
-        updateMatchDto.homeTeamId ?? match.homeTeamId;
-      const awayTeamId =
-        updateMatchDto.awayTeamId ?? match.awayTeamId;
-
-      if (homeTeamId === awayTeamId) {
-        throw new BadRequestException(
-          'Home team and away team must be different',
-        );
-      }
-    }
-
-    if (updateMatchDto.matchDate !== undefined) {
-      match.matchDate = new Date(updateMatchDto.matchDate);
+    if (updateMatchDto.date !== undefined) {
+      match.date = new Date(updateMatchDto.date);
     }
 
     Object.assign(match, updateMatchDto);
     return this.matchesRepository.save(match);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     const match = await this.findOne(id);
     await this.matchesRepository.remove(match);
   }

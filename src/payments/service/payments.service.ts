@@ -10,7 +10,7 @@ import {
   PaymentStatus,
   PaymentMethod,
 } from '../entity/payment.entity';
-import { Player } from '../../players/entity/player.entity';
+import { PlayerProfile } from '../../profiles/entity/player-profile.entity';
 import { CreatePaymentDto } from '../dto/create-payment.dto';
 import { UpdatePaymentDto } from '../dto/update-payment.dto';
 
@@ -19,8 +19,8 @@ export class PaymentsService {
   constructor(
     @InjectRepository(Payment)
     private paymentsRepository: Repository<Payment>,
-    @InjectRepository(Player)
-    private playersRepository: Repository<Player>,
+    @InjectRepository(PlayerProfile)
+    private playerProfilesRepository: Repository<PlayerProfile>,
   ) {}
 
   async findAll(): Promise<Payment[]> {
@@ -41,17 +41,17 @@ export class PaymentsService {
     return payment;
   }
 
-  async findByPlayer(playerId: number): Promise<Payment[]> {
+  async findByPlayer(playerProfileId: number): Promise<Payment[]> {
     // Verificar que el jugador exista
-    const player = await this.playersRepository.findOne({
-      where: { id: playerId },
+    const playerProfile = await this.playerProfilesRepository.findOne({
+      where: { id: playerProfileId },
     });
-    if (!player) {
-      throw new NotFoundException(`Player with ID ${playerId} not found`);
+    if (!playerProfile) {
+      throw new NotFoundException(`PlayerProfile with ID ${playerProfileId} not found`);
     }
 
     return this.paymentsRepository.find({
-      where: { playerId },
+      where: { playerProfileId },
       relations: ['player'],
       order: { createdAt: 'DESC' },
     });
@@ -118,27 +118,27 @@ export class PaymentsService {
 
   async findByMonthAndPlayer(
     month: number,
-    playerId: number,
+    playerProfileId: number,
     year?: number,
   ): Promise<Payment[]> {
     // Si no se proporciona año, usar el año actual
     const currentYear = year || new Date().getFullYear();
 
-    return this.findByMonthAndYearAndPlayer(month, currentYear, playerId);
+    return this.findByMonthAndYearAndPlayer(month, currentYear, playerProfileId);
   }
 
-  async findByYearAndPlayer(year: number, playerId: number): Promise<Payment[]> {
+  async findByYearAndPlayer(year: number, playerProfileId: number): Promise<Payment[]> {
     // Validar año (debe ser un número positivo)
     if (year < 1 || year > 9999) {
       throw new BadRequestException('Year must be between 1 and 9999');
     }
 
     // Verificar que el jugador exista
-    const player = await this.playersRepository.findOne({
-      where: { id: playerId },
+    const playerProfile = await this.playerProfilesRepository.findOne({
+      where: { id: playerProfileId },
     });
-    if (!player) {
-      throw new NotFoundException(`Player with ID ${playerId} not found`);
+    if (!playerProfile) {
+      throw new NotFoundException(`PlayerProfile with ID ${playerProfileId} not found`);
     }
 
     // Crear fecha de inicio del año (1 de enero) como string YYYY-MM-DD
@@ -150,7 +150,7 @@ export class PaymentsService {
     return this.paymentsRepository
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.player', 'player')
-      .where('payment.playerId = :playerId', { playerId })
+      .where('payment.playerProfileId = :playerProfileId', { playerProfileId })
       .andWhere('payment.paymentDate IS NOT NULL')
       .andWhere('payment.paymentDate >= :startDate', { startDate: startDateStr })
       .andWhere('payment.paymentDate <= :endDate', { endDate: endDateStr })
@@ -162,7 +162,7 @@ export class PaymentsService {
   async findByMonthAndYearAndPlayer(
     month: number,
     year: number,
-    playerId: number,
+    playerProfileId: number,
   ): Promise<Payment[]> {
     // Validar mes (1-12)
     if (month < 1 || month > 12) {
@@ -175,11 +175,11 @@ export class PaymentsService {
     }
 
     // Verificar que el jugador exista
-    const player = await this.playersRepository.findOne({
-      where: { id: playerId },
+    const playerProfile = await this.playerProfilesRepository.findOne({
+      where: { id: playerProfileId },
     });
-    if (!player) {
-      throw new NotFoundException(`Player with ID ${playerId} not found`);
+    if (!playerProfile) {
+      throw new NotFoundException(`PlayerProfile with ID ${playerProfileId} not found`);
     }
 
     // Crear fecha de inicio del mes (primer día del mes) como string YYYY-MM-DD
@@ -192,7 +192,7 @@ export class PaymentsService {
     return this.paymentsRepository
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.player', 'player')
-      .where('payment.playerId = :playerId', { playerId })
+      .where('payment.playerProfileId = :playerProfileId', { playerProfileId })
       .andWhere('payment.paymentDate IS NOT NULL')
       .andWhere('payment.paymentDate >= :startDate', { startDate: startDateStr })
       .andWhere('payment.paymentDate <= :endDate', { endDate: endDateStr })
@@ -203,17 +203,17 @@ export class PaymentsService {
 
   async create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
     // Verificar que el jugador exista por documento
-    const player = await this.playersRepository.findOne({
+    const playerProfile = await this.playerProfilesRepository.findOne({
       where: { document: createPaymentDto.document },
     });
-    if (!player) {
+    if (!playerProfile) {
       throw new NotFoundException(
-        `Player with document ${createPaymentDto.document} not found`,
+        `PlayerProfile with document ${createPaymentDto.document} not found`,
       );
     }
 
     const payment = new Payment();
-    payment.playerId = player.id;
+    payment.playerProfileId = playerProfile.id;
     payment.amount = createPaymentDto.amount;
     payment.debt = createPaymentDto.debt ?? 0;
     payment.description = createPaymentDto.description || null;
@@ -230,16 +230,16 @@ export class PaymentsService {
     const payment = await this.findOne(id);
 
     // Verificar que el jugador exista si se actualiza
-    if (updatePaymentDto.playerId !== undefined) {
-      const player = await this.playersRepository.findOne({
-        where: { id: updatePaymentDto.playerId },
+    if (updatePaymentDto.playerProfileId !== undefined) {
+      const playerProfile = await this.playerProfilesRepository.findOne({
+        where: { id: updatePaymentDto.playerProfileId },
       });
-      if (!player) {
+      if (!playerProfile) {
         throw new NotFoundException(
-          `Player with ID ${updatePaymentDto.playerId} not found`,
+          `PlayerProfile with ID ${updatePaymentDto.playerProfileId} not found`,
         );
       }
-      payment.playerId = updatePaymentDto.playerId;
+      payment.playerProfileId = updatePaymentDto.playerProfileId;
     }
 
     if (updatePaymentDto.amount !== undefined) {

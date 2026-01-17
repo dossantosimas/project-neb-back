@@ -2,8 +2,6 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -13,38 +11,32 @@ import { Statistics } from '../../statistics/entity/statistics.entity';
 
 @Entity('matches')
 export class Match {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'match_date', type: 'date' })
-  matchDate: Date;
+  @Column({ name: 'tournament_id', nullable: true })
+  tournamentId: number | null;
 
-  @Column({ name: 'match_time', type: 'time', nullable: true })
-  matchTime: string | null;
+  @Column({ name: 'opposing_team' })
+  opposingTeam: string;
 
-  @Column({ name: 'is_friendly', type: 'boolean', default: false })
-  isFriendly: boolean;
+  @Column({ name: 'home_score' })
+  homeScore: number;
 
-  @Column({ name: 'tournament_id', type: 'uuid', nullable: true })
-  tournamentId: string | null;
+  @Column({ name: 'away_score' })
+  awayScore: number;
 
-  @Column({ name: 'home_team_id', type: 'uuid' })
-  homeTeamId: string;
+  @Column()
+  country: string;
 
-  @Column({ name: 'away_team_id', type: 'uuid' })
-  awayTeamId: string;
+  @Column()
+  city: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  location: string | null;
+  @Column({ type: 'date' })
+  date: Date;
 
-  @Column({ type: 'varchar', length: 20, default: 'scheduled' })
-  status: string; // scheduled / finished / canceled
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
 
   // Relación N:1 con Tournament
   @ManyToOne(() => Tournament, (tournament) => tournament.matches)

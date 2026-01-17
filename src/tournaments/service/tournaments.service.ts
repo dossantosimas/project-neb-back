@@ -22,10 +22,10 @@ export class TournamentsService {
     });
   }
 
-  async findOne(id: string): Promise<Tournament> {
+  async findOne(id: number): Promise<Tournament> {
     const tournament = await this.tournamentsRepository.findOne({
       where: { id },
-      relations: ['matches'],
+      relations: ['matches', 'category'],
     });
     if (!tournament) {
       throw new NotFoundException(`Tournament with ID ${id} not found`);
@@ -35,45 +35,32 @@ export class TournamentsService {
 
   async create(createTournamentDto: CreateTournamentDto): Promise<Tournament> {
     const tournament = this.tournamentsRepository.create({
-      ...createTournamentDto,
-      startDate: createTournamentDto.startDate
-        ? new Date(createTournamentDto.startDate)
-        : null,
-      endDate: createTournamentDto.endDate
-        ? new Date(createTournamentDto.endDate)
-        : null,
+      name: createTournamentDto.name,
+      country: createTournamentDto.country,
+      city: createTournamentDto.city,
+      date: new Date(createTournamentDto.date),
+      categoryId: createTournamentDto.categoryId ?? null,
+      description: createTournamentDto.description ?? null,
     });
     return this.tournamentsRepository.save(tournament);
   }
 
   async update(
-    id: string,
+    id: number,
     updateTournamentDto: UpdateTournamentDto,
   ): Promise<Tournament> {
     const tournament = await this.findOne(id);
 
-    if (updateTournamentDto.startDate !== undefined) {
-      tournament.startDate = updateTournamentDto.startDate
-        ? new Date(updateTournamentDto.startDate)
-        : null;
+    if (updateTournamentDto.date !== undefined) {
+      tournament.date = new Date(updateTournamentDto.date);
     }
 
-    if (updateTournamentDto.endDate !== undefined) {
-      tournament.endDate = updateTournamentDto.endDate
-        ? new Date(updateTournamentDto.endDate)
-        : null;
-    }
-
-    Object.assign(tournament, {
-      ...updateTournamentDto,
-      startDate: tournament.startDate,
-      endDate: tournament.endDate,
-    });
+    Object.assign(tournament, updateTournamentDto);
 
     return this.tournamentsRepository.save(tournament);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     const tournament = await this.findOne(id);
     await this.tournamentsRepository.remove(tournament);
   }

@@ -11,6 +11,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { MatchesModule } from './matches/matches.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { ProfilesModule } from './profiles/profiles.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { StatisticsModule } from './statistics/statistics.module';
     UsersModule,
     AuthModule,
     CategoriesModule,
+    ProfilesModule,
     PlayersModule,
     CoachesModule,
     PaymentsModule,
