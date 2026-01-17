@@ -12,12 +12,12 @@ import { PaymentStatus, PaymentMethod } from '../entity/payment.entity';
 
 export class CreatePaymentDto {
   @ApiProperty({
-    description: 'ID del jugador al que pertenece el pago',
-    example: 1,
+    description: 'Documento del jugador al que pertenece el pago',
+    example: '12345678',
   })
   @IsNotEmpty()
-  @IsNumber()
-  playerId: number;
+  @IsString()
+  document: string;
 
   @ApiProperty({
     description: 'Valor del pago',

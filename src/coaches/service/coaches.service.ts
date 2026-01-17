@@ -75,10 +75,11 @@ export class CoachesService {
     await queryRunner.startTransaction();
 
     try {
-      // Crear usuario
+      // Crear usuario con rol de coach
       const user = queryRunner.manager.create(User, {
         username: createCoachDto.username,
         password: createCoachDto.password,
+        role: 'coach',
       });
       const savedUser = await queryRunner.manager.save(User, user);
 

@@ -57,19 +57,163 @@ export class PaymentsService {
     });
   }
 
-  async create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
+  async findByMonth(month: number, year?: number): Promise<Payment[]> {
+    // Si no se proporciona año, usar el año actual
+    const currentYear = year || new Date().getFullYear();
+
+    return this.findByMonthAndYear(month, currentYear);
+  }
+
+  async findByYear(year: number): Promise<Payment[]> {
+    // Validar año (debe ser un número positivo)
+    if (year < 1 || year > 9999) {
+      throw new BadRequestException('Year must be between 1 and 9999');
+    }
+
+    // Crear fecha de inicio del año (1 de enero) como string YYYY-MM-DD
+    const startDateStr = `${year}-01-01`;
+    
+    // Crear fecha de fin del año (31 de diciembre) como string YYYY-MM-DD
+    const endDateStr = `${year}-12-31`;
+
+    return this.paymentsRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.player', 'player')
+      .where('payment.paymentDate IS NOT NULL')
+      .andWhere('payment.paymentDate >= :startDate', { startDate: startDateStr })
+      .andWhere('payment.paymentDate <= :endDate', { endDate: endDateStr })
+      .orderBy('payment.paymentDate', 'DESC')
+      .addOrderBy('payment.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async findByMonthAndYear(month: number, year: number): Promise<Payment[]> {
+    // Validar mes (1-12)
+    if (month < 1 || month > 12) {
+      throw new BadRequestException('Month must be between 1 and 12');
+    }
+
+    // Validar año (debe ser un número positivo)
+    if (year < 1 || year > 9999) {
+      throw new BadRequestException('Year must be between 1 and 9999');
+    }
+
+    // Crear fecha de inicio del mes (primer día del mes) como string YYYY-MM-DD
+    const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    
+    // Crear fecha de fin del mes (último día del mes) como string YYYY-MM-DD
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+    return this.paymentsRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.player', 'player')
+      .where('payment.paymentDate IS NOT NULL')
+      .andWhere('payment.paymentDate >= :startDate', { startDate: startDateStr })
+      .andWhere('payment.paymentDate <= :endDate', { endDate: endDateStr })
+      .orderBy('payment.paymentDate', 'DESC')
+      .addOrderBy('payment.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async findByMonthAndPlayer(
+    month: number,
+    playerId: number,
+    year?: number,
+  ): Promise<Payment[]> {
+    // Si no se proporciona año, usar el año actual
+    const currentYear = year || new Date().getFullYear();
+
+    return this.findByMonthAndYearAndPlayer(month, currentYear, playerId);
+  }
+
+  async findByYearAndPlayer(year: number, playerId: number): Promise<Payment[]> {
+    // Validar año (debe ser un número positivo)
+    if (year < 1 || year > 9999) {
+      throw new BadRequestException('Year must be between 1 and 9999');
+    }
+
     // Verificar que el jugador exista
     const player = await this.playersRepository.findOne({
-      where: { id: createPaymentDto.playerId },
+      where: { id: playerId },
+    });
+    if (!player) {
+      throw new NotFoundException(`Player with ID ${playerId} not found`);
+    }
+
+    // Crear fecha de inicio del año (1 de enero) como string YYYY-MM-DD
+    const startDateStr = `${year}-01-01`;
+    
+    // Crear fecha de fin del año (31 de diciembre) como string YYYY-MM-DD
+    const endDateStr = `${year}-12-31`;
+
+    return this.paymentsRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.player', 'player')
+      .where('payment.playerId = :playerId', { playerId })
+      .andWhere('payment.paymentDate IS NOT NULL')
+      .andWhere('payment.paymentDate >= :startDate', { startDate: startDateStr })
+      .andWhere('payment.paymentDate <= :endDate', { endDate: endDateStr })
+      .orderBy('payment.paymentDate', 'DESC')
+      .addOrderBy('payment.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async findByMonthAndYearAndPlayer(
+    month: number,
+    year: number,
+    playerId: number,
+  ): Promise<Payment[]> {
+    // Validar mes (1-12)
+    if (month < 1 || month > 12) {
+      throw new BadRequestException('Month must be between 1 and 12');
+    }
+
+    // Validar año (debe ser un número positivo)
+    if (year < 1 || year > 9999) {
+      throw new BadRequestException('Year must be between 1 and 9999');
+    }
+
+    // Verificar que el jugador exista
+    const player = await this.playersRepository.findOne({
+      where: { id: playerId },
+    });
+    if (!player) {
+      throw new NotFoundException(`Player with ID ${playerId} not found`);
+    }
+
+    // Crear fecha de inicio del mes (primer día del mes) como string YYYY-MM-DD
+    const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    
+    // Crear fecha de fin del mes (último día del mes) como string YYYY-MM-DD
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+    return this.paymentsRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.player', 'player')
+      .where('payment.playerId = :playerId', { playerId })
+      .andWhere('payment.paymentDate IS NOT NULL')
+      .andWhere('payment.paymentDate >= :startDate', { startDate: startDateStr })
+      .andWhere('payment.paymentDate <= :endDate', { endDate: endDateStr })
+      .orderBy('payment.paymentDate', 'DESC')
+      .addOrderBy('payment.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
+    // Verificar que el jugador exista por documento
+    const player = await this.playersRepository.findOne({
+      where: { document: createPaymentDto.document },
     });
     if (!player) {
       throw new NotFoundException(
-        `Player with ID ${createPaymentDto.playerId} not found`,
+        `Player with document ${createPaymentDto.document} not found`,
       );
     }
 
     const payment = new Payment();
-    payment.playerId = createPaymentDto.playerId;
+    payment.playerId = player.id;
     payment.amount = createPaymentDto.amount;
     payment.debt = createPaymentDto.debt ?? 0;
     payment.description = createPaymentDto.description || null;

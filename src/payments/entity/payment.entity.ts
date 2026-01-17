@@ -47,6 +47,7 @@ export class Payment {
   status: PaymentStatus;
 
   @Column({
+    name: 'payment_method',
     type: 'varchar',
     enum: PaymentMethod,
     nullable: true,

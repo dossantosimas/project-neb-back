@@ -89,10 +89,11 @@ export class PlayersService {
     await queryRunner.startTransaction();
 
     try {
-      // Crear usuario
+      // Crear usuario con rol de player
       const user = new User();
       user.username = createPlayerDto.username;
       user.password = createPlayerDto.password;
+      user.role = 'player';
       const savedUser = await queryRunner.manager.save(User, user);
 
       // Crear perfil del jugador

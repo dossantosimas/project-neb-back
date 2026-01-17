@@ -42,7 +42,7 @@ export class PaymentsController {
   }
 
   @ApiOperation({
-    summary: 'Obtener todos los pagos o filtrar por jugador',
+    summary: 'Obtener todos los pagos o filtrar por jugador, mes y año',
   })
   @ApiQuery({
     name: 'playerId',
@@ -50,13 +50,75 @@ export class PaymentsController {
     type: Number,
     description: 'ID del jugador para filtrar pagos',
   })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    type: Number,
+    description: 'Mes (1-12) para filtrar pagos por fecha de pago',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    type: Number,
+    description: 'Año (YYYY) para filtrar pagos por fecha de pago',
+    example: 2025,
+  })
   @ApiResponse({ status: 200, description: 'Lista de pagos' })
+  @ApiResponse({ status: 400, description: 'Parámetros inválidos (mes o año)' })
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  findAll(@Query('playerId') playerId?: string) {
+  findAll(
+    @Query('playerId') playerId?: string,
+    @Query('month') month?: string,
+    @Query('year') year?: string,
+  ) {
+    const monthNum = month ? parseInt(month, 10) : undefined;
+    const yearNum = year ? parseInt(year, 10) : undefined;
+
+    // Si se proporciona mes y año
+    if (monthNum !== undefined && yearNum !== undefined) {
+      // Si también se proporciona playerId, filtrar por todo
+      if (playerId) {
+        return this.paymentsService.findByMonthAndYearAndPlayer(
+          monthNum,
+          yearNum,
+          parseInt(playerId, 10),
+        );
+      }
+      // Solo filtrar por mes y año
+      return this.paymentsService.findByMonthAndYear(monthNum, yearNum);
+    }
+
+    // Si solo se proporciona mes (sin año, usa año actual)
+    if (monthNum !== undefined) {
+      if (playerId) {
+        return this.paymentsService.findByMonthAndPlayer(
+          monthNum,
+          parseInt(playerId, 10),
+          yearNum, // puede ser undefined, usará año actual
+        );
+      }
+      return this.paymentsService.findByMonth(monthNum, yearNum);
+    }
+
+    // Si solo se proporciona año (sin mes, muestra todo el año)
+    if (yearNum !== undefined) {
+      if (playerId) {
+        return this.paymentsService.findByYearAndPlayer(
+          yearNum,
+          parseInt(playerId, 10),
+        );
+      }
+      return this.paymentsService.findByYear(yearNum);
+    }
+
+    // Si solo se proporciona playerId, filtrar por jugador
     if (playerId) {
       return this.paymentsService.findByPlayer(parseInt(playerId, 10));
     }
+
+    // Si no hay filtros, devolver todos los pagos
     return this.paymentsService.findAll();
   }
 
