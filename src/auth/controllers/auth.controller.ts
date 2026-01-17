@@ -14,10 +14,6 @@ import { User, UserRole } from 'src/users/entity/user.entity';
 import { Payload } from '../models/payload.model';
 import { UsersService } from 'src/users/service/users.service';
 import { LoginDto } from '../dto/login.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Player } from 'src/players/entity/player.entity';
-import { Coach } from 'src/coaches/entity/coach.entity';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -25,10 +21,6 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private usersService: UsersService,
-    @InjectRepository(Player)
-    private playersRepository: Repository<Player>,
-    @InjectRepository(Coach)
-    private coachesRepository: Repository<Coach>,
   ) {}
 
   @ApiOperation({ summary: 'Iniciar sesión' })
@@ -88,22 +80,8 @@ export class AuthController {
     const payload = req.user as Payload;
     const user = await this.usersService.findOne(payload.sub);
 
-    // Verificar si es jugador
-    const player = await this.playersRepository.findOne({
-      where: { userId: user.id },
-    });
-
-    // Verificar si es entrenador
-    const coach = await this.coachesRepository.findOne({
-      where: { userId: user.id },
-    });
-
     return {
       ...user,
-      isPlayer: !!player,
-      isCoach: !!coach,
-      playerId: player?.id || null,
-      coachId: coach?.id || null,
       isMaster: user.role === UserRole.MASTER,
       isAdmin: user.role === UserRole.ADMIN,
     };

@@ -1,25 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PassportModule } from '@nestjs/passport';
+import { ProfilesService } from './service/profiles.service';
+import { ProfilesController } from './controller/profiles.controller';
 import { Profile } from './entity/profile.entity';
-import { PlayerProfile } from './entity/player-profile.entity';
-import { CoachProfile } from './entity/coach-profile.entity';
 import { User } from '../users/entity/user.entity';
 import { Category } from '../categories/entity/category.entity';
-import { ProfilesController } from './controller/profiles.controller';
-import { ProfilesService } from './service/profiles.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Profile,
-      PlayerProfile,
-      CoachProfile,
-      User,
-      Category,
-    ]),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-  ],
+  imports: [TypeOrmModule.forFeature([Profile, User, Category])],
   controllers: [ProfilesController],
   providers: [ProfilesService],
   exports: [ProfilesService],

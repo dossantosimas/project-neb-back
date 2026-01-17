@@ -4,14 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Env } from './env.model';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { CategoriesModule } from './categories/categories.module';
-import { PlayersModule } from './players/players.module';
-import { CoachesModule } from './coaches/coaches.module';
-import { PaymentsModule } from './payments/payments.module';
-import { TournamentsModule } from './tournaments/tournaments.module';
-import { MatchesModule } from './matches/matches.module';
-import { StatisticsModule } from './statistics/statistics.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -40,12 +34,6 @@ import { ProfilesModule } from './profiles/profiles.module';
     AuthModule,
     CategoriesModule,
     ProfilesModule,
-    PlayersModule,
-    CoachesModule,
-    PaymentsModule,
-    TournamentsModule,
-    MatchesModule,
-    StatisticsModule,
   ],
 })
 export class AppModule {}

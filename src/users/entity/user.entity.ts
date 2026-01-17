@@ -4,10 +4,11 @@ import {
   PrimaryGeneratedColumn,
   BeforeInsert,
   BeforeUpdate,
-  OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
+import { Profile } from '../../profiles/entity/profile.entity';
 
 // Roles: 1: master, 2: admin, 3: coach, 4: player
 export enum UserRole {
@@ -39,16 +40,20 @@ export class User {
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
 
-  // Relación 1:N con Profile
-  @OneToMany('Profile', 'user')
-  profiles: any[];
+  // Relación 1:1 con Profile
+  @OneToOne(() => Profile, (profile) => profile.user)
+  profile: Profile;
 
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
     // Solo hashear si la contraseña es nueva o ha cambiado
     // Verificar si la contraseña parece estar ya hasheada (los hashes de bcrypt tienen un formato específico)
-    if (this.password && !this.password.startsWith('$2b$') && !this.password.startsWith('$2a$')) {
+    if (
+      this.password &&
+      !this.password.startsWith('$2b$') &&
+      !this.password.startsWith('$2a$')
+    ) {
       this.password = await bcrypt.hash(this.password, 10);
     }
   }

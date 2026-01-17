@@ -34,21 +34,12 @@ export class UsersService {
   > {
     const queryBuilder = this.usersRepository
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.profiles', 'profile')
-      .leftJoinAndSelect('profile.category', 'category')
-      .leftJoinAndSelect('profile.coachProfile', 'coachProfile')
-      .leftJoinAndSelect('profile.playerProfile', 'playerProfile')
-      .leftJoinAndSelect('profile.coachProfileDetail', 'coachProfileDetail')
-      .leftJoinAndSelect('coachProfileDetail.categories', 'coachCategories')
       .orderBy('user.id', 'ASC');
 
-    // Si hay búsqueda, filtrar por nombre o documento
+    // Si hay búsqueda, filtrar por username
     if (search && search.trim()) {
       const searchTerm = `%${search.trim()}%`;
-      queryBuilder.where(
-        '(playerProfile.firstName ILIKE :search OR playerProfile.lastName ILIKE :search OR playerProfile.document ILIKE :search OR CONCAT(playerProfile.firstName, \' \', playerProfile.lastName) ILIKE :search)',
-        { search: searchTerm },
-      );
+      queryBuilder.where('user.username ILIKE :search', { search: searchTerm });
     }
 
     // Si no se proporciona paginación, devolver todos los usuarios
@@ -83,13 +74,6 @@ export class UsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: [
-        'profiles',
-        'profiles.category',
-        'profiles.coachProfile',
-        'profiles.coachProfile.categories',
-        'profiles.playerProfile',
-      ],
     });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);

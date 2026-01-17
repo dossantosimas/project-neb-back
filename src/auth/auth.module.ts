@@ -11,14 +11,11 @@ import { UsersModule } from 'src/users/users.module';
 import { AuthController } from './controllers/auth.controller';
 import { ConfigService } from '@nestjs/config';
 import { Env } from 'src/env.model';
-import { Player } from 'src/players/entity/player.entity';
-import { Coach } from 'src/coaches/entity/coach.entity';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
-    TypeOrmModule.forFeature([Player, Coach]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService<Env>) => ({
