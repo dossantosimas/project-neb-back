@@ -20,20 +20,19 @@ export class UsersService {
     page?: number,
     limit?: number,
     search?: string,
-  ): Promise<
-    | {
-        data: User[];
-        meta: {
-          total: number;
-          page: number;
-          limit: number;
-          totalPages: number;
-        };
-      }
-    | User[]
-  > {
+  ): Promise<{
+    data: User[];
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
     const queryBuilder = this.usersRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .leftJoinAndSelect('profile.category', 'category')
       .orderBy('user.id', 'ASC');
 
     // Si hay búsqueda, filtrar por username
@@ -42,13 +41,7 @@ export class UsersService {
       queryBuilder.where('user.username ILIKE :search', { search: searchTerm });
     }
 
-    // Si no se proporciona paginación, devolver todos los usuarios
-    if (page === undefined && limit === undefined) {
-      const data = await queryBuilder.getMany();
-      return data;
-    }
-
-    // Aplicar paginación
+    // Aplicar paginación (valores por defecto: page=1, limit=10)
     const pageNum = page ?? 1;
     const limitNum = limit ?? 10;
     const skip = (pageNum - 1) * limitNum;
@@ -74,6 +67,7 @@ export class UsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
+      relations: ['profile', 'profile.category'],
     });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);

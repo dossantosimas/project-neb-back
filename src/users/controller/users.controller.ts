@@ -42,64 +42,51 @@ export class UsersController {
   }
 
   @ApiOperation({
-    summary: 'Obtener todos los usuarios (con o sin paginación y filtros)',
+    summary: 'Obtener todos los usuarios con paginación',
     description:
-      'Si no se proporcionan page y limit, devuelve todos los usuarios. Si se proporcionan, devuelve resultados paginados.',
+      'Devuelve usuarios paginados. Si no se proporcionan page y limit, usa valores por defecto (page=1, limit=10).',
   })
   @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
-    description:
-      'Número de página (opcional, si no se proporciona devuelve todos)',
+    description: 'Número de página (por defecto: 1)',
     example: 1,
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description:
-      'Cantidad de elementos por página (opcional, si no se proporciona devuelve todos)',
+    description: 'Cantidad de elementos por página (por defecto: 10)',
     example: 10,
   })
   @ApiQuery({
     name: 'search',
     required: false,
     type: String,
-    description:
-      'Buscar por nombre del perfil (firstName, lastName) o documento',
-    example: 'Juan',
+    description: 'Buscar por username',
+    example: 'juan',
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista de usuarios (paginada o completa)',
+    description: 'Lista de usuarios paginada',
     schema: {
-      oneOf: [
-        {
+      type: 'object',
+      properties: {
+        data: {
           type: 'array',
           items: { type: 'object' },
-          description: 'Array de usuarios cuando no hay paginación',
         },
-        {
+        meta: {
           type: 'object',
           properties: {
-            data: {
-              type: 'array',
-              items: { type: 'object' },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                total: { type: 'number' },
-                page: { type: 'number' },
-                limit: { type: 'number' },
-                totalPages: { type: 'number' },
-              },
-            },
+            total: { type: 'number', description: 'Total de usuarios' },
+            page: { type: 'number', description: 'Página actual' },
+            limit: { type: 'number', description: 'Elementos por página' },
+            totalPages: { type: 'number', description: 'Total de páginas' },
           },
-          description: 'Objeto con data y meta cuando hay paginación',
         },
-      ],
+      },
     },
   })
   @UseGuards(AuthGuard('jwt'))
