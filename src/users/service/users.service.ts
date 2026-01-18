@@ -20,6 +20,9 @@ export class UsersService {
     page?: number,
     limit?: number,
     search?: string,
+    documento?: string,
+    nombre?: string,
+    apellido?: string,
   ): Promise<{
     data: User[];
     meta: {
@@ -35,10 +38,36 @@ export class UsersService {
       .leftJoinAndSelect('profile.category', 'category')
       .orderBy('user.id', 'ASC');
 
-    // Si hay búsqueda, filtrar por username
+    // Filtro por username (search)
     if (search && search.trim()) {
       const searchTerm = `%${search.trim()}%`;
-      queryBuilder.where('user.username ILIKE :search', { search: searchTerm });
+      queryBuilder.andWhere('user.username ILIKE :search', {
+        search: searchTerm,
+      });
+    }
+
+    // Filtro por documento del perfil
+    if (documento && documento.trim()) {
+      const documentoTerm = `%${documento.trim()}%`;
+      queryBuilder.andWhere('profile.numeroDocumento ILIKE :documento', {
+        documento: documentoTerm,
+      });
+    }
+
+    // Filtro por nombre del perfil
+    if (nombre && nombre.trim()) {
+      const nombreTerm = `%${nombre.trim()}%`;
+      queryBuilder.andWhere('profile.nombre ILIKE :nombre', {
+        nombre: nombreTerm,
+      });
+    }
+
+    // Filtro por apellido del perfil
+    if (apellido && apellido.trim()) {
+      const apellidoTerm = `%${apellido.trim()}%`;
+      queryBuilder.andWhere('profile.apellido ILIKE :apellido', {
+        apellido: apellidoTerm,
+      });
     }
 
     // Aplicar paginación (valores por defecto: page=1, limit=10)

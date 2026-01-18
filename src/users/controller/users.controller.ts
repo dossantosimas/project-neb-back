@@ -67,6 +67,27 @@ export class UsersController {
     description: 'Buscar por username',
     example: 'juan',
   })
+  @ApiQuery({
+    name: 'documento',
+    required: false,
+    type: String,
+    description: 'Filtrar por número de documento del perfil',
+    example: '12345678',
+  })
+  @ApiQuery({
+    name: 'nombre',
+    required: false,
+    type: String,
+    description: 'Filtrar por nombre del perfil',
+    example: 'Juan',
+  })
+  @ApiQuery({
+    name: 'apellido',
+    required: false,
+    type: String,
+    description: 'Filtrar por apellido del perfil',
+    example: 'Pérez',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de usuarios paginada',
@@ -95,10 +116,20 @@ export class UsersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
+    @Query('documento') documento?: string,
+    @Query('nombre') nombre?: string,
+    @Query('apellido') apellido?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
-    return this.usersService.findAll(pageNum, limitNum, search);
+    return this.usersService.findAll(
+      pageNum,
+      limitNum,
+      search,
+      documento,
+      nombre,
+      apellido,
+    );
   }
 
   @ApiOperation({ summary: 'Obtener un usuario por ID' })
