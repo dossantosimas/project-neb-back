@@ -1,5 +1,15 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber } from 'class-validator';
+import {
+  ArrayUnique,
+  IsArray,
+  IsEmail,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateProfileDto {
   @ApiProperty({ description: 'ID del usuario' })
@@ -27,10 +37,17 @@ export class CreateProfileDto {
   @IsNotEmpty()
   numeroDocumento: string;
 
-  @ApiPropertyOptional({ description: 'ID de la categoría' })
-  @IsNumber()
+  @ApiPropertyOptional({
+    description: 'IDs de categorías asociadas al perfil (many-to-many)',
+    type: [Number],
+    example: [1, 2, 3],
+  })
+  @IsArray()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  @Type(() => Number)
   @IsOptional()
-  categoriaId?: number | null;
+  categoryIds?: number[];
 
   @ApiPropertyOptional({ description: 'Nombre del familiar' })
   @IsString()

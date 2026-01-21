@@ -3,8 +3,9 @@ import {
   Column,
   PrimaryGeneratedColumn,
   OneToOne,
-  ManyToOne,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { User } from '../../users/entity/user.entity';
 import { Category } from '../../categories/entity/category.entity';
@@ -29,9 +30,6 @@ export class Profile {
   @Column({ name: 'numero_documento', type: 'varchar' })
   numeroDocumento: string;
 
-  @Column({ name: 'categoria_id', nullable: true })
-  categoriaId: number | null;
-
   @Column({ name: 'familiar', type: 'varchar', nullable: true })
   familiar: string | null;
 
@@ -49,10 +47,12 @@ export class Profile {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  // Relación ManyToOne con Category
-  @ManyToOne(() => Category, (category) => category.profiles, {
-    nullable: true,
+  // Relación ManyToMany con Category (un perfil puede pertenecer a varias categorías)
+  @ManyToMany(() => Category, (category) => category.profiles, { cascade: false })
+  @JoinTable({
+    name: 'profile_categories',
+    joinColumn: { name: 'profile_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'category_id', referencedColumnName: 'id' },
   })
-  @JoinColumn({ name: 'categoria_id' })
-  category: Category | null;
+  categories: Category[];
 }

@@ -58,6 +58,17 @@ export class CategoriesController {
     return this.categoriesService.findOne(id);
   }
 
+  @ApiOperation({
+    summary: 'Obtener todos los jugadores (players) de una categoría',
+  })
+  @ApiParam({ name: 'id', type: 'number', description: 'ID de la categoría' })
+  @ApiResponse({ status: 200, description: 'Lista de jugadores de la categoría' })
+  @ApiResponse({ status: 404, description: 'Categoría no encontrada' })
+  @Get(':id/players')
+  findPlayers(@Param('id', ParseIntPipe) id: number) {
+    return this.categoriesService.findPlayersByCategoryId(id);
+  }
+
   @ApiOperation({ summary: 'Actualizar una categoría' })
   @ApiParam({ name: 'id', type: 'number', description: 'ID de la categoría' })
   @ApiResponse({ status: 200, description: 'Categoría actualizada exitosamente' })

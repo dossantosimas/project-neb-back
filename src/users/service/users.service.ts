@@ -35,7 +35,7 @@ export class UsersService {
     const queryBuilder = this.usersRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.profile', 'profile')
-      .leftJoinAndSelect('profile.category', 'category')
+      .leftJoinAndSelect('profile.categories', 'categories')
       .orderBy('user.id', 'ASC');
 
     // Filtro por username (search)
@@ -96,7 +96,7 @@ export class UsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['profile', 'profile.category'],
+      relations: ['profile', 'profile.categories'],
     });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);

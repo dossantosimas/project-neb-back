@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Profile } from '../entity/profile.entity';
 import { User } from '../../users/entity/user.entity';
 import { Category } from '../../categories/entity/category.entity';
@@ -43,15 +43,18 @@ export class ProfilesService {
       );
     }
 
-    // Verificar que la categoría exista si se proporciona
-    let category: Category | null = null;
-    if (createProfileDto.categoriaId) {
-      category = await this.categoriesRepository.findOne({
-        where: { id: createProfileDto.categoriaId },
+    // Verificar que las categorías existan si se proporcionan
+    let categories: Category[] = [];
+    if (createProfileDto.categoryIds?.length) {
+      categories = await this.categoriesRepository.findBy({
+        id: In(createProfileDto.categoryIds),
       });
-      if (!category) {
+
+      const foundIds = new Set(categories.map((c) => c.id));
+      const missing = createProfileDto.categoryIds.filter((id) => !foundIds.has(id));
+      if (missing.length) {
         throw new NotFoundException(
-          `Category with ID ${createProfileDto.categoriaId} not found`,
+          `Categories not found: ${missing.join(', ')}`,
         );
       }
     }
@@ -62,11 +65,11 @@ export class ProfilesService {
       apellido: createProfileDto.apellido,
       tipoDocumento: createProfileDto.tipoDocumento,
       numeroDocumento: createProfileDto.numeroDocumento,
-      categoriaId: createProfileDto.categoriaId || null,
       familiar: createProfileDto.familiar || null,
       contactoFamiliar: createProfileDto.contactoFamiliar || null,
       parentezco: createProfileDto.parentezco || null,
       correo: createProfileDto.correo || null,
+      categories,
     });
 
     return this.profilesRepository.save(profile);
@@ -74,14 +77,14 @@ export class ProfilesService {
 
   async findAll(): Promise<Profile[]> {
     return this.profilesRepository.find({
-      relations: ['user', 'category'],
+      relations: ['user', 'categories'],
     });
   }
 
   async findOne(id: number): Promise<Profile> {
     const profile = await this.profilesRepository.findOne({
       where: { id },
-      relations: ['user', 'category'],
+      relations: ['user', 'categories'],
     });
     if (!profile) {
       throw new NotFoundException(`Profile with ID ${id} not found`);
@@ -92,28 +95,29 @@ export class ProfilesService {
   async findByUserId(userId: number): Promise<Profile | null> {
     return this.profilesRepository.findOne({
       where: { userId },
-      relations: ['user', 'category'],
+      relations: ['user', 'categories'],
     });
   }
 
   async update(id: number, updateProfileDto: UpdateProfileDto): Promise<Profile> {
     const profile = await this.findOne(id);
 
-    // Verificar que la categoría exista si se proporciona
-    if (updateProfileDto.categoriaId !== undefined) {
-      if (updateProfileDto.categoriaId === null) {
-        profile.categoriaId = null;
-        profile.category = null;
+    // Actualizar categorías (many-to-many) si se proporciona:
+    // - Enviar [] para limpiar todas las categorías
+    if (updateProfileDto.categoryIds !== undefined) {
+      const ids = updateProfileDto.categoryIds ?? [];
+      if (!ids.length) {
+        profile.categories = [];
       } else {
-        const category = await this.categoriesRepository.findOne({
-          where: { id: updateProfileDto.categoriaId },
-        });
-        if (!category) {
+        const categories = await this.categoriesRepository.findBy({ id: In(ids) });
+        const foundIds = new Set(categories.map((c) => c.id));
+        const missing = ids.filter((cid) => !foundIds.has(cid));
+        if (missing.length) {
           throw new NotFoundException(
-            `Category with ID ${updateProfileDto.categoriaId} not found`,
+            `Categories not found: ${missing.join(', ')}`,
           );
         }
-        profile.categoriaId = updateProfileDto.categoriaId;
+        profile.categories = categories;
       }
     }
 
