@@ -80,8 +80,11 @@ export class AuthController {
     const payload = req.user as Payload;
     const user = await this.usersService.findOne(payload.sub);
 
+    // Excluir el password de la respuesta
+    const { password, ...userWithoutPassword } = user;
+
     return {
-      ...user,
+      ...userWithoutPassword,
       isMaster: user.role === UserRole.MASTER,
       isAdmin: user.role === UserRole.ADMIN,
     };
