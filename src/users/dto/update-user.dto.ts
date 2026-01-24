@@ -2,11 +2,13 @@ import {
   IsString,
   MinLength,
   IsOptional,
-  IsEnum,
+  IsIn,
   IsBoolean,
+  IsNumber,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../entity/user.entity';
+import { Type } from 'class-transformer';
 
 export class UpdateUserDto {
   @ApiProperty({
@@ -30,13 +32,15 @@ export class UpdateUserDto {
   password?: string;
 
   @ApiProperty({
-    description: 'Rol del usuario',
+    description: 'Rol del usuario (1: Master, 2: Admin, 3: Coach, 4: Player, 5: User)',
     enum: UserRole,
     example: UserRole.ADMIN,
     required: false,
   })
   @IsOptional()
-  @IsEnum(UserRole)
+  @Type(() => Number)
+  @IsNumber()
+  @IsIn([1, 2, 3, 4, 5])
   role?: UserRole;
 
   @ApiProperty({

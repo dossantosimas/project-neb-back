@@ -19,22 +19,220 @@ export class PaymentsService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<Payment[]> {
-    return this.paymentsRepository.find({
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(filters?: {
+    userId?: number;
+    month?: number;
+    year?: number;
+    startDate?: string;
+    endDate?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    minDebt?: number;
+    maxDebt?: number;
+    hasDebt?: boolean;
+    description?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<Payment[] | { data: Payment[]; meta: any }> {
+    const queryBuilder = this.paymentsRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.user', 'user')
+      .leftJoinAndSelect('user.profile', 'profile');
+
+    // Filtro por userId
+    if (filters?.userId) {
+      queryBuilder.andWhere('payment.userId = :userId', {
+        userId: filters.userId,
+      });
+    }
+
+    // Filtro por mes y año
+    if (filters?.month && filters?.year) {
+      const startDateStr = `${filters.year}-${String(filters.month).padStart(2, '0')}-01`;
+      const daysInMonth = new Date(filters.year, filters.month, 0).getDate();
+      const endDateStr = `${filters.year}-${String(filters.month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+      queryBuilder.andWhere('payment.paymentDate >= :monthStartDate', {
+        monthStartDate: startDateStr,
+      });
+      queryBuilder.andWhere('payment.paymentDate <= :monthEndDate', {
+        monthEndDate: endDateStr,
+      });
+    } else if (filters?.year && !filters?.month) {
+      // Solo año
+      const startDateStr = `${filters.year}-01-01`;
+      const endDateStr = `${filters.year}-12-31`;
+      queryBuilder.andWhere('payment.paymentDate >= :yearStartDate', {
+        yearStartDate: startDateStr,
+      });
+      queryBuilder.andWhere('payment.paymentDate <= :yearEndDate', {
+        yearEndDate: endDateStr,
+      });
+    } else if (filters?.month && !filters?.year) {
+      // Solo mes (año actual)
+      const currentYear = new Date().getFullYear();
+      const startDateStr = `${currentYear}-${String(filters.month).padStart(2, '0')}-01`;
+      const daysInMonth = new Date(currentYear, filters.month, 0).getDate();
+      const endDateStr = `${currentYear}-${String(filters.month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+      queryBuilder.andWhere('payment.paymentDate >= :monthOnlyStartDate', {
+        monthOnlyStartDate: startDateStr,
+      });
+      queryBuilder.andWhere('payment.paymentDate <= :monthOnlyEndDate', {
+        monthOnlyEndDate: endDateStr,
+      });
+    }
+
+    // Filtro por rango de fechas (usa nombres únicos de parámetros)
+    if (filters?.startDate) {
+      queryBuilder.andWhere('payment.paymentDate >= :filterStartDate', {
+        filterStartDate: filters.startDate,
+      });
+    }
+    if (filters?.endDate) {
+      queryBuilder.andWhere('payment.paymentDate <= :filterEndDate', {
+        filterEndDate: filters.endDate,
+      });
+    }
+
+    // Filtro por monto mínimo
+    if (filters?.minAmount !== undefined) {
+      queryBuilder.andWhere('payment.amount >= :minAmount', {
+        minAmount: filters.minAmount,
+      });
+    }
+
+    // Filtro por monto máximo
+    if (filters?.maxAmount !== undefined) {
+      queryBuilder.andWhere('payment.amount <= :maxAmount', {
+        maxAmount: filters.maxAmount,
+      });
+    }
+
+    // Filtro por deuda mínima
+    if (filters?.minDebt !== undefined) {
+      queryBuilder.andWhere('payment.debt >= :minDebt', {
+        minDebt: filters.minDebt,
+      });
+    }
+
+    // Filtro por deuda máxima
+    if (filters?.maxDebt !== undefined) {
+      queryBuilder.andWhere('payment.debt <= :maxDebt', {
+        maxDebt: filters.maxDebt,
+      });
+    }
+
+    // Filtro por si tiene deuda o no
+    if (filters?.hasDebt !== undefined) {
+      if (filters.hasDebt) {
+        queryBuilder.andWhere('payment.debt > 0');
+      } else {
+        queryBuilder.andWhere('payment.debt = 0');
+      }
+    }
+
+    // Filtro por descripción (búsqueda parcial)
+    if (filters?.description) {
+      queryBuilder.andWhere('payment.description ILIKE :description', {
+        description: `%${filters.description}%`,
+      });
+    }
+
+    // Ordenar por fecha de creación descendente (más reciente primero)
+    // Usamos createdAt como orden principal ya que siempre tiene valor
+    queryBuilder.orderBy('payment.createdAt', 'DESC');
+
+    // Paginación - Si se proporciona page o limit, se activa la paginación
+    const shouldPaginate = filters?.page !== undefined || filters?.limit !== undefined;
+    
+    if (shouldPaginate) {
+      // Valores por defecto: page=1, limit=10
+      const pageNum = filters?.page && filters.page > 0 ? filters.page : 1;
+      const limitNum = filters?.limit && filters.limit > 0 ? filters.limit : 10;
+      const skip = (pageNum - 1) * limitNum;
+
+      queryBuilder.skip(skip).take(limitNum);
+
+      const [data, total] = await queryBuilder.getManyAndCount();
+      const totalPages = Math.ceil(total / limitNum);
+
+      // Transformar datos para incluir nombre y apellido
+      const transformedData = data.map((payment) => ({
+        ...payment,
+        userName: payment.user?.profile?.nombre || null,
+        userLastName: payment.user?.profile?.apellido || null,
+      }));
+
+      return {
+        data: transformedData,
+        meta: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages,
+          hasNextPage: pageNum < totalPages,
+          hasPreviousPage: pageNum > 1,
+        },
+      };
+    }
+
+    // Sin paginación, devolver todos los resultados
+    const allPayments = await queryBuilder.getMany();
+    
+    // Transformar datos para incluir nombre y apellido
+    return allPayments.map((payment) => ({
+      ...payment,
+      userName: payment.user?.profile?.nombre || null,
+      userLastName: payment.user?.profile?.apellido || null,
+    }));
   }
 
-  async findOne(id: number): Promise<Payment> {
+  async findOne(id: number): Promise<any> {
     const payment = await this.paymentsRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'user.profile'],
     });
     if (!payment) {
       throw new NotFoundException(`Payment with ID ${id} not found`);
     }
-    return payment;
+    
+    // Transformar para incluir nombre y apellido
+    return {
+      ...payment,
+      userName: payment.user?.profile?.nombre || null,
+      userLastName: payment.user?.profile?.apellido || null,
+    };
+  }
+
+  async findLatestPayment(userId: number): Promise<any> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const payment = await this.paymentsRepository
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.user', 'user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .where('payment.userId = :userId', { userId })
+      .andWhere('payment.paymentDate IS NOT NULL')
+      .orderBy('payment.paymentDate', 'DESC')
+      .addOrderBy('payment.createdAt', 'DESC')
+      .getOne();
+
+    if (!payment) {
+      throw new NotFoundException(
+        `No payment found for user with ID ${userId}`,
+      );
+    }
+
+    // Transformar para incluir nombre y apellido
+    return {
+      ...payment,
+      userName: payment.user?.profile?.nombre || null,
+      userLastName: payment.user?.profile?.apellido || null,
+    };
   }
 
   async findByUser(userId: number): Promise<Payment[]> {
@@ -197,10 +395,11 @@ export class PaymentsService {
       .getMany();
   }
 
-  async create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
+  async create(createPaymentDto: CreatePaymentDto): Promise<any> {
     // Verificar que el usuario exista
     const user = await this.usersRepository.findOne({
       where: { id: createPaymentDto.userId },
+      relations: ['profile'],
     });
     if (!user) {
       throw new NotFoundException(
@@ -217,16 +416,37 @@ export class PaymentsService {
       ? new Date(createPaymentDto.paymentDate)
       : null;
 
-    return this.paymentsRepository.save(payment);
+    const savedPayment = await this.paymentsRepository.save(payment);
+    
+    // Cargar relaciones para devolver datos completos
+    const paymentWithRelations = await this.paymentsRepository.findOne({
+      where: { id: savedPayment.id },
+      relations: ['user', 'user.profile'],
+    });
+
+    // Transformar para incluir nombre y apellido
+    return {
+      ...paymentWithRelations,
+      userName: paymentWithRelations?.user?.profile?.nombre || null,
+      userLastName: paymentWithRelations?.user?.profile?.apellido || null,
+    };
   }
 
-  async update(id: number, updatePaymentDto: UpdatePaymentDto): Promise<Payment> {
-    const payment = await this.findOne(id);
+  async update(id: number, updatePaymentDto: UpdatePaymentDto): Promise<any> {
+    const payment = await this.paymentsRepository.findOne({
+      where: { id },
+      relations: ['user', 'user.profile'],
+    });
+    
+    if (!payment) {
+      throw new NotFoundException(`Payment with ID ${id} not found`);
+    }
 
     // Verificar que el usuario exista si se actualiza
     if (updatePaymentDto.userId !== undefined) {
       const user = await this.usersRepository.findOne({
         where: { id: updatePaymentDto.userId },
+        relations: ['profile'],
       });
       if (!user) {
         throw new NotFoundException(
@@ -251,7 +471,20 @@ export class PaymentsService {
         : null;
     }
 
-    return this.paymentsRepository.save(payment);
+    const updatedPayment = await this.paymentsRepository.save(payment);
+    
+    // Cargar relaciones actualizadas
+    const paymentWithRelations = await this.paymentsRepository.findOne({
+      where: { id: updatedPayment.id },
+      relations: ['user', 'user.profile'],
+    });
+
+    // Transformar para incluir nombre y apellido
+    return {
+      ...paymentWithRelations,
+      userName: paymentWithRelations?.user?.profile?.nombre || null,
+      userLastName: paymentWithRelations?.user?.profile?.apellido || null,
+    };
   }
 
   async remove(id: number): Promise<void> {
