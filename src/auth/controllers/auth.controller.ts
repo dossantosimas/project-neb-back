@@ -1,4 +1,4 @@
-import { Controller, Post, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, UseGuards, Req, Body } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -13,7 +13,10 @@ import { AuthService } from '../services/auth.service';
 import { User, UserRole } from 'src/users/entity/user.entity';
 import { Payload } from '../models/payload.model';
 import { UsersService } from 'src/users/service/users.service';
+import { ProfilesService } from 'src/profiles/service/profiles.service';
 import { LoginDto } from '../dto/login.dto';
+import { RegisterDto } from '../dto/register.dto';
+import { RegisterCompleteDto } from '../dto/register-complete.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,6 +24,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private usersService: UsersService,
+    private profilesService: ProfilesService,
   ) {}
 
   @ApiOperation({ summary: 'Iniciar sesión' })
@@ -44,6 +48,57 @@ export class AuthController {
     return {
       user,
       access_token: this.authService.generateToken(user),
+    };
+  }
+
+  @ApiOperation({ summary: 'Registro público de jugador (solo usuario)' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
+  @ApiResponse({ status: 409, description: 'El username ya esta en uso' })
+  @Post('register')
+  register(@Body() registerDto: RegisterDto) {
+    return this.usersService.create({
+      username: registerDto.username,
+      password: registerDto.password,
+      role: UserRole.PLAYER,
+      isActive: false,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Registro público completo de jugador (usuario + perfil)',
+    description:
+      'Crea un usuario con rol PLAYER (inactivo) y su perfil asociado en una sola petición. No requiere autenticación.',
+  })
+  @ApiBody({ type: RegisterCompleteDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Usuario y perfil creados exitosamente',
+  })
+  @ApiResponse({ status: 409, description: 'El username o documento ya está en uso' })
+  @Post('register-complete')
+  async registerComplete(@Body() registerCompleteDto: RegisterCompleteDto) {
+    // Crear usuario primero
+    const user = await this.usersService.create({
+      username: registerCompleteDto.username,
+      password: registerCompleteDto.password,
+      role: UserRole.PLAYER,
+      isActive: false,
+    });
+
+    // Crear perfil asociado
+    const profile = await this.profilesService.create({
+      userId: user.id,
+      nombre: registerCompleteDto.nombre,
+      apellido: registerCompleteDto.apellido,
+      tipoDocumento: registerCompleteDto.tipoDocumento,
+      numeroDocumento: registerCompleteDto.numeroDocumento,
+    });
+
+    // Retornar usuario con perfil
+    return {
+      ...user,
+      profile,
     };
   }
 

@@ -8,6 +8,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 import { UsersModule } from 'src/users/users.module';
+import { ProfilesModule } from 'src/profiles/profiles.module';
 import { AuthController } from './controllers/auth.controller';
 import { ConfigService } from '@nestjs/config';
 import { Env } from 'src/env.model';
@@ -15,6 +16,7 @@ import { Env } from 'src/env.model';
 @Module({
   imports: [
     UsersModule,
+    ProfilesModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
