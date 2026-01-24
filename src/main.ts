@@ -24,7 +24,7 @@ async function bootstrap() {
   const isDevelopment = process.env.NODE_ENV !== 'production';
   const corsOrigin =
     configService.get('CORS_ORIGIN', { infer: true }) ||
-    'https://project-neb-front.vercel.app/';
+    'https://project-neb-front.vercel.app';
 
   app.enableCors({
     origin: isDevelopment
